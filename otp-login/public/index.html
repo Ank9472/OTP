@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login - Enter Phone</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h2 { margin-bottom: 8px; color: #1a1a2e; }
+    p { color: #666; margin-bottom: 28px; font-size: 14px; }
+    input {
+      width: 100%; padding: 14px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px; font-size: 16px;
+      outline: none; transition: border 0.2s;
+    }
+    input:focus { border-color: #4f6ef7; }
+    button {
+      width: 100%; padding: 14px;
+      background: #4f6ef7; color: white;
+      border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 600;
+      cursor: pointer; margin-top: 16px;
+      transition: background 0.2s;
+    }
+    button:hover { background: #3a57d4; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .msg { margin-top: 14px; font-size: 14px; color: red; }
+    .msg.success { color: green; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🔐 SMS Login</h2>
+    <p>Enter your phone number to receive a one-time password</p>
+    <input type="tel" id="phone" placeholder="+91 9876543210" />
+    <button id="sendBtn" onclick="sendOTP()">Send OTP</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <script>
+    async function sendOTP() {
+      const phone = document.getElementById('phone').value.trim();
+      const btn = document.getElementById('sendBtn');
+      const msg = document.getElementById('msg');
+
+      if (!phone) { msg.textContent = 'Please enter a phone number.'; return; }
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      msg.textContent = '';
+
+      const res = await fetch('/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        msg.className = 'msg success';
+        msg.textContent = 'OTP sent! Redirecting...';
+        setTimeout(() => window.location.href = '/verify.html', 1500);
+      } else {
+        msg.className = 'msg';
+        msg.textContent = data.message;
+        btn.disabled = false;
+        btn.textContent = 'Send OTP';
+      }
+    }
+  </script>
+</body>
+</html>

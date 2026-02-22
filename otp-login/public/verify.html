@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Verify OTP</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4ff;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    .card {
+      background: white; padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+      width: 100%; max-width: 400px; text-align: center;
+    }
+    h2 { margin-bottom: 8px; color: #1a1a2e; }
+    p { color: #666; margin-bottom: 28px; font-size: 14px; }
+    .otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+    .otp-inputs input {
+      width: 52px; height: 60px; text-align: center;
+      font-size: 24px; font-weight: bold;
+      border: 2px solid #e0e0e0; border-radius: 10px; outline: none;
+    }
+    .otp-inputs input:focus { border-color: #4f6ef7; }
+    button {
+      width: 100%; padding: 14px; background: #4f6ef7;
+      color: white; border: none; border-radius: 10px;
+      font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s;
+    }
+    button:hover { background: #3a57d4; }
+    button:disabled { background: #aaa; cursor: not-allowed; }
+    .msg { margin-top: 14px; font-size: 14px; color: red; }
+    .msg.success { color: green; }
+    .resend { margin-top: 16px; font-size: 13px; color: #888; }
+    .resend a { color: #4f6ef7; cursor: pointer; text-decoration: none; }
+    #timer { font-weight: bold; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>✅ Verify OTP</h2>
+    <p>Enter the 6-digit code sent to your phone</p>
+    <div class="otp-inputs">
+      <input type="text" maxlength="1" class="otp-box"/>
+      <input type="text" maxlength="1" class="otp-box"/>
+      <input type="text" maxlength="1" class="otp-box"/>
+      <input type="text" maxlength="1" class="otp-box"/>
+      <input type="text" maxlength="1" class="otp-box"/>
+      <input type="text" maxlength="1" class="otp-box"/>
+    </div>
+    <button onclick="verifyOTP()">Verify OTP</button>
+    <div class="msg" id="msg"></div>
+    <div class="resend">
+      Resend code in <span id="timer">2:00</span> |
+      <a onclick="resend()">Resend</a>
+    </div>
+  </div>
+
+  <script>
+    // Auto-focus next box
+    const boxes = document.querySelectorAll('.otp-box');
+    boxes.forEach((box, i) => {
+      box.addEventListener('input', () => {
+        if (box.value && i < boxes.length - 1) boxes[i + 1].focus();
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !box.value && i > 0) boxes[i - 1].focus();
+      });
+    });
+
+    // Countdown timer
+    let seconds = 300;
+    const timerEl = document.getElementById('timer');
+    const interval = setInterval(() => {
+      seconds--;
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      timerEl.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      if (seconds <= 0) clearInterval(interval);
+    }, 1000);
+
+    async function verifyOTP() {
+      const otp = Array.from(boxes).map(b => b.value).join('');
+      const msg = document.getElementById('msg');
+
+      if (otp.length < 6) { msg.textContent = 'Please enter all 6 digits.'; return; }
+
+      const res = await fetch('/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ otp })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        msg.className = 'msg success';
+        msg.textContent = '🎉 Login successful! Redirecting...';
+        setTimeout(() => window.location.href = '/dashboard.html', 1500);
+      } else {
+        msg.className = 'msg';
+        msg.textContent = data.message;
+      }
+    }
+
+    function resend() {
+      window.location.href = '/';
+    }
+  </script>
+</body>
+</html>
